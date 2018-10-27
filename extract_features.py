@@ -24,6 +24,7 @@ parser.add_argument('--image_width', default=224, type=int)
 parser.add_argument('--model', default='resnet101')
 parser.add_argument('--model_stage', default=3, type=int)
 parser.add_argument('--batch_size', default=128, type=int)
+parser.add_argument('--mode', required=True, default='normal')
 
 
 def build_model(args):
@@ -86,9 +87,18 @@ def main(args):
     i0 = 0
     cur_batch = []
     for i, (path, idx) in enumerate(input_paths):
-      img0 = imread(path, mode='RGB')
-      img1 = imread(path.replace("new", "cor"), mode='RGB')
-      img = np.concatenate((img0, img1), axis=0)
+      if args.mode == "normal":
+        img = imread(path, mode='RGB')
+      elif args.mode == "stack_action":
+        img0 = imread(path, mode='RGB')
+        img1 = imread(path.replace("new", "cor"), mode='RGB')
+        img = np.concatenate((img0, img1), axis=0)
+      elif args.mode == "stack_normal":
+        img0 = imread(path, mode='RGB')
+        img1 = copy.deepcopy(img0)
+        img1[:] = 0
+        img = np.concatenate((img0, img1), axis=0)
+
       img = imresize(img, img_size, interp='bicubic')
       img = img.transpose(2, 0, 1)[None]
 
