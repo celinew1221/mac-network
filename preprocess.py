@@ -403,6 +403,7 @@ class Preprocesser(object):
         dataset = {"train": None, "evalTrain": None, "val": None, "test": None}        
         if hasTrain:
             dataset["train"] = self.readTier("train" + suffix, train = True)
+            logging.debug("Loading Extra Training data.")
         dataset["val"] = self.readTier("val" + suffix, train = False)
         dataset["test"] = self.readTier("test" + suffix, train = False)
         
@@ -654,12 +655,15 @@ class Preprocesser(object):
         mainDataset = self.readDataset(hasTrain = True)
 
         extraDataset = None
-        if config.extra:
+        if config.extra or config.incluAction:
             # compositionalClevr doesn't have training dataset
-            extraDataset = self.readDataset(suffix = "H", hasTrain = (not config.extraVal))          
-            # extra dataset uses the same images
-            if not config.extraVal:
-                for tier in extraData:
+            # action has training dataset, therefore load training for action
+            config.logger.debug("Loading Extra data...")
+            extraDataset = self.readDataset(suffix = "H", hasTrain = (not config.extraVal or config.incluAction))
+
+            # extra dataset uses the same images - only for extra
+            if not config.extraVal and config.extra:
+                for tier in extraDataset:
                     extraDataset[tier]["images"] = mainDataset[tier]["images"]
 
         print("took {:.2f} seconds".format(time.time() - start))

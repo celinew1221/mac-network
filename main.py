@@ -202,6 +202,7 @@ def loadWeights(sess, saver, init):
 ###################################### training / evaluation ######################################
 # Chooses data to train on (main / extra) data. 
 def chooseTrainingData(data):
+    config.logger.debug(" Select Main Train data")
     trainingData = data["main"]["train"]
     alterData = None
 
@@ -212,6 +213,15 @@ def chooseTrainingData(data):
             else:
                 trainingData = data["extra"]["train"]                  
         if config.alterExtra:
+            alterData = data["extra"]["train"]
+
+    if config.incluAction:
+        if config.actionOnlyTrain:
+            config.logger.debug("Select Extra Training data")
+            trainingData = data["extra"]["train"]
+        elif config.alterActionTrain:
+            config.logger.debug("Select both main and extra training data.")
+            trainingData = data["main"]["train"]
             alterData = data["extra"]["train"]
 
     return trainingData, alterData
@@ -665,6 +675,10 @@ def main():
     data, embeddings, answerDict = preprocessor.preprocessData()
     print("took {} seconds".format(bcolored("{:.2f}".format(time.time() - start), "blue")))
 
+    if config.debub:
+        for i in data:
+            logging.debug("Images %s" % (i["images"]))
+
     # build model
     print(bold("Building model..."))
     start = time.time()
@@ -717,10 +731,17 @@ def main():
                     print(bold("Restoring EMA weights"))
                     emaSaver.restore(sess, config.weightsFile(epoch))
 
-                # evaluation                
-                evalRes = runEvaluation(sess, model, data["main"], epoch)
-                extraEvalRes = runEvaluation(sess, model, data["extra"], epoch, 
-                    evalTrain = not config.extraVal)
+                # evaluation
+                if config.actionOnlyTrain:
+                    # only validate on extra data
+                    config.logger.debug("Evaluate on Extra Validation set")
+                    extraEvalRes = runEvaluation(sess, model, data["extra"], epoch,
+                                                 evalTrain=not config.extraVal)
+                else:
+                    config.logger.debug("Evaluate on both main and extra val")
+                    evalRes = runEvaluation(sess, model, data["main"], epoch)
+                    extraEvalRes = runEvaluation(sess, model, data["extra"], epoch,
+                        evalTrain = not config.extraVal)
 
                 # restore standard weights
                 if config.useEMA:
@@ -783,9 +804,16 @@ def main():
                 else:
                     saver.restore(sess, config.weightsFile(epoch))
 
-            evalRes = runEvaluation(sess, model, data["main"], epoch, evalTest = True)
-            extraEvalRes = runEvaluation(sess, model, data["extra"], epoch, 
-                evalTrain = not config.extraVal, evalTest = True)
+            if config.actionOnlyTrain:
+                config.logger.debug("Test on extra testing set")
+                extraEvalRes = runEvaluation(sess, model, data["extra"], epoch,
+                                             evalTrain=not config.extraVal, evalTest=True)
+
+            else:
+                config.logger.debug("Test on main and extra testing set")
+                evalRes = runEvaluation(sess, model, data["main"], epoch, evalTest = True)
+                extraEvalRes = runEvaluation(sess, model, data["extra"], epoch,
+                                    evalTrain = not config.extraVal, evalTest = True)
                         
             print("took {:.2f} seconds".format(time.time() - start))
             printDatasetResults(None, evalRes, extraEvalRes)

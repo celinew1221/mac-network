@@ -1,8 +1,12 @@
 import os
 import argparse
+import logging
+import logging
 
 ###################################### configuration ######################################
 class Config(object):
+    logging.basicConfig(level=logging.DEBUG)
+    logger = logging.getLogger(__name__)
 
     typeFilters = [[], ["1_query_size_",
                 "1_query_material_",
@@ -166,11 +170,15 @@ def parseArgs():
     parser.add_argument("--vFilterOp",      default = 0, type = int,    help = "test questions by to be included in the types listed")
 
     # extra and extraVal
+    parser.add_argument("--incluAction",    action = "store_true",      help = "prepare action data (add to "
+                                                                                     "vocabulary") #
+    parser.add_argument("--actionOnlyTrain",    action = "store_true",      help = "Train only on action data")
+    parser.add_argument("--alterActionTrain", action = "store_true",    help = "Train on both main and action data")
     parser.add_argument("--extra",          action = "store_true",      help = "prepare extra data (add to vocabulary") #
     parser.add_argument("--trainExtra",     action = "store_true",      help = "train (only) on extra data") #
     parser.add_argument("--alterExtra",     action = "store_true",      help = "alter main data training with extra dataset") # 
     parser.add_argument("--alterNum",       default = 1, type = int,    help = "alteration rate") #
-    parser.add_argument("--extraVal",       action = "store_true",      help = "only extra validation data (for compositional clevr)") # 
+    parser.add_argument("--extraVal",       action = "store_true",      help = "only extra validation data (for compositional clevr)") #
     parser.add_argument("--finetuneNum",    default = 0, type = int,    help = "if positive, finetune on that subset of val (for compositional clevr)") #
 
     # exponential moving average
@@ -386,6 +394,7 @@ def parseArgs():
     parser.add_argument("--writeGateShared",        action = "store_true",          help = "use one gate value for all dimensions of the memory state") 
     parser.add_argument("--writeGateBias",          default = 1.0, type = float,    help = "bias for the write unit gate (positive to bias for taking new memory)") 
 
+    parser.add_argument("--debug",                  action = "store_true",          help = "Enable Debug logging.")
     ## modular
     # parser.add_argument("--modulesNum", default = 10, type = int) 
     # parser.add_argument("--controlBoth", default = False, type = bool)
@@ -421,7 +430,23 @@ def parseArgs():
     # parser.add_argument("--gumbelSoftmaxBoth",  action = "store_true", help = "use softmax for training and testing") #
     # parser.add_argument("--gumbelArgmaxBoth",   action = "store_true", help = "use argmax for training and testing") #
     
-    parser.parse_args(namespace = config) 
+    parser.parse_args(namespace = config)
+
+    # action argument check
+    if config.incluAction:
+        if config.actionOnlyTrain and config.alterActionTrain:
+            raise ValueError("You can't select both. Select either actionTrain or alterActionTrain.")
+
+    if (config.actionOnlyTrain or config.alterActionTrain) and config.incluAction:
+        raise ValueError("Please select incluAction also.")
+
+    if config.extra and config.incluAction:
+        raise ValueError("You can't select extra and incluAction at the same time.")
+
+    if config.debug:
+        config.logger.setLevel(logging.DEBUG)
+    else:
+        config.logger.setLevel(logging.INFO)
 
 ###################################### dataset configuration ######################################
 
