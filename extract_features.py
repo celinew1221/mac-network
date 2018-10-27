@@ -66,7 +66,7 @@ def main(args):
   input_paths = []
   idx_set = set()
   for fn in os.listdir(args.input_image_dir):
-    if not fn.endswith('.png'): continue
+    if not fn.endswith('.png') or "cor" in fn: continue
     idx = int(os.path.splitext(fn)[0].split('_')[-1])
     input_paths.append((os.path.join(args.input_image_dir, fn), idx))
     idx_set.add(idx)
@@ -86,9 +86,12 @@ def main(args):
     i0 = 0
     cur_batch = []
     for i, (path, idx) in enumerate(input_paths):
-      img = imread(path, mode='RGB')
+      img0 = imread(path, mode='RGB')
+      img1 = imread(path.replace("new", "cor"), mode='RGB')
+      img = np.concatenate((img0, img1), axis=0)
       img = imresize(img, img_size, interp='bicubic')
       img = img.transpose(2, 0, 1)[None]
+
       cur_batch.append(img)
       if len(cur_batch) == args.batch_size:
         feats = run_batch(cur_batch, model)
