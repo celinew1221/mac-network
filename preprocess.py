@@ -680,8 +680,11 @@ class Preprocesser(object):
 
         mainDataset = self.prepareDataset(mainDataset)
         # don't bucket for alternated data and also for humans data (small dataset)
-        extraDataset = self.prepareDataset(extraDataset, 
-            noBucket = (not config.extraVal) or (not config.alterExtra))
+        if not config.incluAction:
+            extraDataset = self.prepareDataset(extraDataset,
+                                               noBucket = (not config.extraVal) or (not config.alterExtra))
+        else:
+            extraDataset = self.prepareDataset(extraDataset)
 
         data = {"main": mainDataset, "extra": extraDataset}
         print("took {:.2f} seconds".format(time.time() - start))
