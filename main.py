@@ -234,6 +234,7 @@ def runEvaluation(sess, model, data, epoch, evalTrain = True, evalTest = False, 
     res = {"evalTrain": None, "val": None, "test": None}
     
     if data is not None:
+        config.logger.debug("Evaluate on %s" % (data["val"]["images"]))
         if evalTrain and config.evalTrain:
             res["evalTrain"] = runEpoch(sess, model, data["evalTrain"], train = False, epoch = epoch, getAtt = getAtt)
 
