@@ -95,16 +95,23 @@ for x in preds/clevrExperiment/*Img*.png; do magick convert $x -brightness-contr
 To run different experiments use the following commands:
 
 ### Train regular as pretrained weights
+
 `git checkout baseline`
+
 `python3 main.py --expName "pretrained" --train --epochs 6 --netLength 6 --gpus 1 --workers 1 --taskSize 8 --batchSize 64 --weightsToKeep 10 --earlyStopping 5 --incluAction --trainedNum 350000 --testedNum 10000 @configs/args1.txt --debug`
+
 `python main.py --expName "pretrained" --finalTest --netLength 6 -r --getPreds --getAtt @configs/args1.txt --incluAction --debug --gpus 1`
 
 ### To train based-on the pretrained weights
 We need to copy pretrained file to action_only_finetuned folder first
+
 `cp ./weights/pretrained/config-pretrained.json ./weights/action_only_finetuned/config-pretrained.csv`
+
 `cp ./results/pretrained/results-pretrained.csv ./results/action_only_finetuned/results-action_only_finetuned.csv`
 
+
 ### Method 1 - Stack Image Vectors 
+
 `python3 main.py --expName "action_only_finetuned" --train --epochs 200 --netLength 6 --gpus 1 --workers 1 --taskSize 8 --batchSize 64 --weightsToKeep 20 --earlyStopping 10 -r --incluAction --actionOnlyTrain @configs/args1.txt --debug`
 
 `python main.py --expName "action_only_finetuned" --finalTest --netLength 6 -r --getPreds --getAtt @configs/args1.txt --incluAction --actionOnlyTrain --gpus 1 --debug`
@@ -112,12 +119,19 @@ We need to copy pretrained file to action_only_finetuned folder first
 `python visualization.py --expName "action_only_finetuned" --tier val`
 
 ### Method 2 - Train Stack Image Vectors from Scratch
+
 `python3 main.py --expName "action_only_scratch" --train --epochs 200 --netLength 6 --gpus 0 --workers 1 --taskSize 8 --batchSize 64 --weightsToKeep 20  --earlyStopping 20  --incluAction --actionOnlyTrain @configs/args1.txt --debug`
+
 `python main.py --expName "action_only_scratch" --finalTest --netLength 6 -r --getPreds --getAtt @configs/args1.txt --debug --incluAction --gpus 0`
+
 `python visualization.py --expName "action_only_scratch" --tier val`
 
 ### Method 3 - The IntraAction Cell
+
 `git checkout intraActionCell`
+
 `python3 main.py --expName "intraActionCell" --train --epochs 200 --netLength 6 --gpus 0 --workers 1 --taskSize 8 --batchSize 64 --weightsToKeep 20  --earlyStopping 20 --dataBasedir ./CLEVR_action @configs/args1.txt`
+
 `python main.py --expName "intraActionCell" --finalTest --netLength 6 -r --getPreds --getAtt @configs/args1.txt --gpus 0`
 `python visualization.py --expName "intraActionCell" --tier val`
+
