@@ -95,12 +95,12 @@ for x in preds/clevrExperiment/*Img*.png; do magick convert $x -brightness-contr
 To run different experiments use the following commands:
 
 ### Train regular as pretrained weights
-
 ```bash 
 git checkout baseline`
 python3 main.py --expName "pretrained" --train --epochs 6 --netLength 6 --gpus 1 --workers 1 --taskSize 8 --batchSize 64 --weightsToKeep 10 --earlyStopping 5 --incluAction --trainedNum 350000 --testedNum 10000 @configs/args1.txt --debug
 python main.py --expName "pretrained" --finalTest --netLength 6 -r --getPreds --getAtt @configs/args1.txt --incluAction --debug --gpus 1
 ```
+
 ### To train based-on the pretrained weights
 We need to copy pretrained file to action_only_finetuned folder first
 ```bash
@@ -121,6 +121,7 @@ python3 main.py --expName "action_only_scratch" --train --epochs 200 --netLength
 python main.py --expName "action_only_scratch" --finalTest --netLength 6 -r --getPreds --getAtt @configs/args1.txt --debug --incluAction --gpus 0
 python visualization.py --expName "action_only_scratch" --tier val
 ```
+
 ### Method 3 - The IntraAction Cell
 ```bash
 git checkout intraActionCell
@@ -128,7 +129,9 @@ python3 main.py --expName "intraActionCell" --train --epochs 200 --netLength 6 -
 python main.py --expName "intraActionCell" --finalTest --netLength 6 -r --getPreds --getAtt @configs/args1.txt --gpus 0`
 python visualization.py --expName "intraActionCell" --tier val
 ```
+
 If you find this work useful in your research, please cite
+```
 @misc{celinew1221_action_mac_network_2018,
   title={# Compostional Attention Networks with Action Identification for Machine Reasoning},
   author={Celine Wei},
@@ -137,3 +140,4 @@ If you find this work useful in your research, please cite
   journal={GitHub repository},
   howpublished={\url{https://github.com/celinew1221/mac-network/}},
 }
+```
