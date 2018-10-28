@@ -437,7 +437,7 @@ def parseArgs():
         if config.actionOnlyTrain and config.alterActionTrain:
             raise ValueError("You can't select both. Select either actionTrain or alterActionTrain.")
 
-    if (config.actionOnlyTrain or config.alterActionTrain) and config.incluAction:
+    if (config.actionOnlyTrain or config.alterActionTrain) and not config.incluAction:
         raise ValueError("Please select incluAction also.")
 
     if config.extra and config.incluAction:

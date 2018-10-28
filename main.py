@@ -234,6 +234,7 @@ def runEvaluation(sess, model, data, epoch, evalTrain = True, evalTest = False, 
     res = {"evalTrain": None, "val": None, "test": None}
     
     if data is not None:
+        config.logger.debug("Evaluate on %s" % (data["images"]))
         if evalTrain and config.evalTrain:
             res["evalTrain"] = runEpoch(sess, model, data["evalTrain"], train = False, epoch = epoch, getAtt = getAtt)
 
@@ -674,10 +675,6 @@ def main():
     preprocessor = Preprocesser()
     data, embeddings, answerDict = preprocessor.preprocessData()
     print("took {} seconds".format(bcolored("{:.2f}".format(time.time() - start), "blue")))
-
-    if config.debub:
-        for i in data:
-            logging.debug("Images %s" % (i["images"]))
 
     # build model
     print(bold("Building model..."))
