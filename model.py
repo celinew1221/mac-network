@@ -112,12 +112,19 @@ class MACnet(object):
 
     # Feeds data into placeholders. See addPlaceholders method for further details.
     def createFeedDict(self, data, images, train):
-        config.logger.debug("Images Stack Size %s, Indiv %s" % (images["images"][:, :3, :, :].shape))
+        config.logger.debug("CreateFeedDict")
+        config.logger.debug("Batch Image Size: imagesBatch %s" % str(images["images"].shape))
+        shape = images["images"].shape[1] // 2
+        img1 = images["images"][:, :shape, :, :]
+        img2 = images["images"][:, shape:, :, :]
+        config.logger.debug("Split images into img1 and img2 batches: Img1 %s and Img2 %s" %
+                            (str(img1.shape), str(img2.shape)))
+
         feedDict = {
             self.questionsIndicesAll: data["questions"],
             self.questionLengthsAll: data["questionLengths"],
-            self.imagesPlaceholder: images["images"][:, :3, :, :],
-            self.secImagesPlaceholder: images["images"][:, 3:, :, :],
+            self.imagesPlaceholder: img1,
+            self.secImagesPlaceholder: img2,
             self.answersIndicesAll: data["answers"],
             
             self.dropouts["encInput"]: config.encInputDropout if train else 1.0,
@@ -168,9 +175,9 @@ class MACnet(object):
     Returns preprocessed images. 
     [batchSize, height * width, outDim]
     '''
-    def stem(self, images, inDim, outDim, addLoc = None):
+    def stem(self, images, inDim, outDim, addLoc = None, name = ""):
 
-        with tf.variable_scope("stem"):        
+        with tf.variable_scope("stem" + name):
             if addLoc is None:
                 addLoc = config.locationAware
 
@@ -796,8 +803,8 @@ class MACnet(object):
                             self.questionLengths, projWords, projQuestion, config.ctrlDim)
 
                         # Image Input Unit (stem)
-                        imageFeatures = self.stem(self.images, self.imageInDim, config.memDim)
-                        secImageFeatures = self.stem(self.secImages, self.imageInDim, config.memDim)
+                        imageFeatures = self.stem(self.images, self.imageInDim, config.memDim, name="_img1")
+                        secImageFeatures = self.stem(self.secImages, self.imageInDim, config.memDim, name="_img2")
 
                         # baseline model
                         if config.useBaseline:
@@ -808,7 +815,7 @@ class MACnet(object):
                             # self.temperature = self.getTemp()
                             
                             finalControl, finalMemory = \
-                                self.MACnetwork(imageFeatures, secImagesFeatures, vecQuestions,
+                                self.MACnetwork(imageFeatures, secImageFeatures, vecQuestions,
                                                 questionWords, questionCntxWords, self.questionLengths)
                             
                             # Output Unit - step 1 (preparing classifier inputs)

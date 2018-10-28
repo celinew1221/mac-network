@@ -435,8 +435,8 @@ class MACCell(tf.nn.rnn_cell.RNNCell):
 
             # project memory back to memory dimension
             if config.writeMemProj or (dim != config.memDim):
-                newMem1 = ops.linear(newMem1, dim, config.memDim, name="newMemory")
-                newMem2 = ops.linear(newMem2, dim, config.memDim, name="newMemory")
+                newMem1 = ops.linear(newMem1, dim, config.memDim, name="newMem1")
+                newMem2 = ops.linear(newMem2, dim, config.memDim, name="newMem2")
 
             # wrap the two memory
             # linear combination
@@ -550,7 +550,7 @@ class MACCell(tf.nn.rnn_cell.RNNCell):
             info = self.read(self.knowledgeBase, memory, newControl, name = cellName, reuse = cellReuse) 
 
             if config.actionOnlyTrain or config.alterActionTrain:
-                info2 = self.read(self.secKnowledgeBase, memory, newControl, name=cellName, reuse=cellReuse)
+                info2 = self.read(self.secKnowledgeBase, memory, newControl, name=cellName + "_sec", reuse=cellReuse)
                 if config.writeDropout < 1.0:
                     # write unit
                     info = tf.nn.dropout(info, self.dropouts["write"])

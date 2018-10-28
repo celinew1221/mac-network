@@ -445,7 +445,6 @@ def loaderRun(images, batches):
     #     worker.stop()
     # else:
     while batchNum < len(batches):
-        config.logger.debug("Batches example %s " % str(batches[0]))
         nextItem = loadImageBatches(images, batches, batchNum, config.taskSize)
         assert len(nextItem) == min(config.taskSize, len(batches) - batchNum)
         batchNum += config.taskSize                    
@@ -568,7 +567,6 @@ def runEpoch(sess, model, data, train, epoch, saver = None, calle = None,
 
     ## prepare batches
     buckets = data["data"]
-    config.logger.debug("Bucket example %s" % (str(buckets[0])))
     dataLen = sum(getLength(bucket) for bucket in buckets)
     
     # make batches and randomize
@@ -602,7 +600,7 @@ def runEpoch(sess, model, data, train, epoch, saver = None, calle = None,
             imagesBatch = loadImageBatch(data["images"], batch)
         for i, imageId in enumerate(batch["imageIds"]):
             assert imageId == imagesBatch["imageIds"][i]   
-        
+
         # run batch
         res = model.runBatch(sess, batch, imagesBatch, train, getAtt) 
 
@@ -676,11 +674,6 @@ def main():
     preprocessor = Preprocesser()
     data, embeddings, answerDict = preprocessor.preprocessData()
     print("took {} seconds".format(bcolored("{:.2f}".format(time.time() - start), "blue")))
-
-    if config.debug:
-        for i in data:
-            logger.debug("Images %s" % (i["images"]))
-            logger.debug("Instance example %s" % (str(i['instances'][0])))
 
     # build model
     print(bold("Building model..."))
