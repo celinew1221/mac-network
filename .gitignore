@@ -1,9 +1,0 @@
-.idea/
-CLEVR_action
-CLEVR_v1
-__pycache__
-backup
-results/
-run.sh
-weights/
-preds
