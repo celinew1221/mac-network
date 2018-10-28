@@ -13,3 +13,4 @@ CLEVR_action
 CLEVR_v1
 __pycache__/
 run.sh
+preds
