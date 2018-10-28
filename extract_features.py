@@ -101,17 +101,17 @@ def main(args):
       elif args.mode == "action_sep":
         img0 = imread(path, mode='RGB')
         img0 = imresize(img0, img_size, interp='bicubic')
-        img0 = img.transpose(2, 0, 1)[None]
+        img0 = img0.transpose(2, 0, 1)[None]
 
         img1 = imread(path.replace("new", "cor"), mode='RGB')
         img1 = imresize(img1, img_size, interp='bicubic')
-        img1 = img.transpose(2, 0, 1)[None]
+        img1 = img1.transpose(2, 0, 1)[None]
 
         # stack them tgt
         img = np.concatenate((img0, img1), axis=1)
-
-      img = imresize(img, img_size, interp='bicubic')
-      img = img.transpose(2, 0, 1)[None]
+      if args.mode != "action_sep":
+        img = imresize(img, img_size, interp='bicubic')
+        img = img.transpose(2, 0, 1)[None]
 
       cur_batch.append(img)
       if len(cur_batch) == args.batch_size:
