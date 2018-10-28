@@ -1,6 +1,6 @@
 # Compostional Attention Networks with Action Identification for Machine Reasoning
 
-This code is in development to solve action identification mentioned in this [work]. It is developed based on MacNet[Compositional Attention Networks for Machine Reasoning](https://arxiv.org/pdf/1803.03067.pdf)(ICLR 2018). MacNet a fully differentiable model that learns to perform multi-step reasoning and explore it in the context of the [CLEVR dataset](http://cs.stanford.edu/people/jcjohns/clevr/). This code is meant to explore in the context of the [action-agumented CLEVR_dataset](). See the github folder for more details.
+This code is in development to solve action identification mentioned in this [work]. It is developed based on  MacNet[Compositional Attention Networks for Machine Reasoning](https://arxiv.org/pdf/1803.03067.pdf)(ICLR 2018). MacNet a fully differentiable model that learns to perform multi-step reasoning and explore it in the context of the [CLEVR dataset](http://cs.stanford.edu/people/jcjohns/clevr/). This code is meant to explore in the context of the [action-agumented CLEVR_dataset](). See the github folder for more details.
 
 In particular, two methods are explored in this work. Firstly, a naive approach is implemented in baseline branch - where the two images are stacked together and the stacked vectors are fed into the MacNet. A second approch is to redesign the MAC cell at [`mac_cell.py`](mac_cell.py) in `intraActionCell` branch. Details of the design is shown in the images below. Images are fed separately into the network.
 Run `python main.py -h` or see [`config.py`](config.py) for the complete list of options. To run action-based model, see `--incluAction`, `--actionOnlyTrain` and `--alterActionTrain`. 
@@ -91,36 +91,33 @@ Optionally, to make the image attention maps look a little bit nicer, you can do
 for x in preds/clevrExperiment/*Img*.png; do magick convert $x -brightness-contrast 20x35 $x; done;
 ```
 
-# Action-Based Dataset
+## Action-Based Dataset
 To run different experiments use the following commands:
 
-## Train regular as pretrained weights
-`git checkout baseline
-python3 main.py --expName "pretrained" --train --epochs 6 --netLength 6 --gpus 1 --workers 1 --taskSize 8 --batchSize 64 --weightsToKeep 10 --earlyStopping 5 --incluAction --trainedNum 350000 --testedNum 10000 @configs/args1.txt --debug
-python main.py --expName "pretrained" --finalTest --netLength 6 -r --getPreds --getAtt @configs/args1.txt --incluAction --debug --gpus 1`
+### Train regular as pretrained weights
+`git checkout baseline`
+`python3 main.py --expName "pretrained" --train --epochs 6 --netLength 6 --gpus 1 --workers 1 --taskSize 8 --batchSize 64 --weightsToKeep 10 --earlyStopping 5 --incluAction --trainedNum 350000 --testedNum 10000 @configs/args1.txt --debug`
+`python main.py --expName "pretrained" --finalTest --netLength 6 -r --getPreds --getAtt @configs/args1.txt --incluAction --debug --gpus 1`
 
-## To train based-on the pretrained weights
+### To train based-on the pretrained weights
 We need to copy pretrained file to action_only_finetuned folder first
-`cp ./weights/pretrained/config-pretrained.json ./weights/action_only_finetuned/config-pretrained.csv
-cp ./results/pretrained/results-pretrained.csv ./results/action_only_finetuned/results-action_only_finetuned.csv`
+`cp ./weights/pretrained/config-pretrained.json ./weights/action_only_finetuned/config-pretrained.csv`
+`cp ./results/pretrained/results-pretrained.csv ./results/action_only_finetuned/results-action_only_finetuned.csv`
 
-## Method 1 - Stack Image Vectors 
-`python3 main.py --expName "action_only_finetuned" --train --epochs 200 --netLength 6 --gpus 1 --workers 1 --taskSize 8 --batchSize 64 --weightsToKeep 20 --earlyStopping 10 -r --incluAction --actionOnlyTrain @configs/args1.txt --debug
+### Method 1 - Stack Image Vectors 
+`python3 main.py --expName "action_only_finetuned" --train --epochs 200 --netLength 6 --gpus 1 --workers 1 --taskSize 8 --batchSize 64 --weightsToKeep 20 --earlyStopping 10 -r --incluAction --actionOnlyTrain @configs/args1.txt --debug`
 
-python main.py --expName "action_only_finetuned" --finalTest --netLength 6 -r --getPreds --getAtt @configs/args1.txt --incluAction --actionOnlyTrain --gpus 1 --debug
+`python main.py --expName "action_only_finetuned" --finalTest --netLength 6 -r --getPreds --getAtt @configs/args1.txt --incluAction --actionOnlyTrain --gpus 1 --debug`
 
-python visualization.py --expName "action_only_finetuned" --tier val`
+`python visualization.py --expName "action_only_finetuned" --tier val`
 
-## Method 2 - Train Stack Image Vectors from Scratch
-`python3 main.py --expName "action_only_scratch" --train --epochs 200 --netLength 6 --gpus 0 --workers 1 --taskSize 8 --batchSize 64 --weightsToKeep 20  --earlyStopping 20  --incluAction --actionOnlyTrain @configs/args1.txt --debug
-python main.py --expName "action_only_scratch" --finalTest --netLength 6 -r --getPreds --getAtt @configs/args1.txt --debug --incluAction --gpus 0
-python visualization.py --expName "action_only_scratch" --tier val`
+### Method 2 - Train Stack Image Vectors from Scratch
+`python3 main.py --expName "action_only_scratch" --train --epochs 200 --netLength 6 --gpus 0 --workers 1 --taskSize 8 --batchSize 64 --weightsToKeep 20  --earlyStopping 20  --incluAction --actionOnlyTrain @configs/args1.txt --debug`
+`python main.py --expName "action_only_scratch" --finalTest --netLength 6 -r --getPreds --getAtt @configs/args1.txt --debug --incluAction --gpus 0`
+`python visualization.py --expName "action_only_scratch" --tier val`
 
-## Method 3 - The IntraAction Cell
-`git checkout intraActionCell
-python3 main.py --expName "intraActionCell" --train --epochs 200 --netLength 6 --gpus 0 --workers 1 --taskSize 8 --batchSize 64 --weightsToKeep 20  --earlyStopping 20 --dataBasedir ./CLEVR_action @configs/args1.txt
-python main.py --expName "intraActionCell" --finalTest --netLength 6 -r --getPreds --getAtt @configs/args1.txt --gpus 0
-python visualization.py --expName "intraActionCell" --tier val`
-
-
-
+### Method 3 - The IntraAction Cell
+`git checkout intraActionCell`
+`python3 main.py --expName "intraActionCell" --train --epochs 200 --netLength 6 --gpus 0 --workers 1 --taskSize 8 --batchSize 64 --weightsToKeep 20  --earlyStopping 20 --dataBasedir ./CLEVR_action @configs/args1.txt`
+`python main.py --expName "intraActionCell" --finalTest --netLength 6 -r --getPreds --getAtt @configs/args1.txt --gpus 0`
+`python visualization.py --expName "intraActionCell" --tier val`
