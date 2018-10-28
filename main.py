@@ -677,7 +677,7 @@ def main():
     data, embeddings, answerDict = preprocessor.preprocessData()
     print("took {} seconds".format(bcolored("{:.2f}".format(time.time() - start), "blue")))
 
-    if config.debub:
+    if config.debug:
         for i in data:
             logger.debug("Images %s" % (i["images"]))
             logger.debug("Instance example %s" % (str(i['instances'][0])))

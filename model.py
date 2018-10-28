@@ -797,7 +797,7 @@ class MACnet(object):
 
                         # Image Input Unit (stem)
                         imageFeatures = self.stem(self.images, self.imageInDim, config.memDim)
-                        secImageFeatures = self.stem(self.secImages, self.imageInDim, config.menDim)
+                        secImageFeatures = self.stem(self.secImages, self.imageInDim, config.memDim)
 
                         # baseline model
                         if config.useBaseline:
