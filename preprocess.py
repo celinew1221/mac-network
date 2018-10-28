@@ -403,7 +403,7 @@ class Preprocesser(object):
         dataset = {"train": None, "evalTrain": None, "val": None, "test": None}        
         if hasTrain:
             dataset["train"] = self.readTier("train" + suffix, train = True)
-            logging.debug("Loading Extra Training data.")
+            config.logger.debug("Loading Extra Training data.")
         dataset["val"] = self.readTier("val" + suffix, train = False)
         dataset["test"] = self.readTier("test" + suffix, train = False)
         
