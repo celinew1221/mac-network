@@ -112,13 +112,13 @@ class MACnet(object):
 
     # Feeds data into placeholders. See addPlaceholders method for further details.
     def createFeedDict(self, data, images, train):
-        config.logger.debug("CreateFeedDict")
-        config.logger.debug("Batch Image Size: imagesBatch %s" % str(images["images"].shape))
+        # config.logger.debug("CreateFeedDict")
+        # config.logger.debug("Batch Image Size: imagesBatch %s" % str(images["images"].shape))
         shape = images["images"].shape[1] // 2
         img1 = images["images"][:, :shape, :, :]
         img2 = images["images"][:, shape:, :, :]
-        config.logger.debug("Split images into img1 and img2 batches: Img1 %s and Img2 %s" %
-                            (str(img1.shape), str(img2.shape)))
+        # config.logger.debug("Split images into img1 and img2 batches: Img1 %s and Img2 %s" %
+        #                     (str(img1.shape), str(img2.shape)))
 
         feedDict = {
             self.questionsIndicesAll: data["questions"],

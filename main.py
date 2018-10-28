@@ -46,7 +46,7 @@ def logRecord(epoch, epochTime, lr, trainRes, evalRes, extraEvalRes):
         record = [epoch, trainRes["acc"], evalRes["val"]["acc"], trainRes["loss"], evalRes["val"]["loss"]]
         if config.evalTrain:
             record += [evalRes["evalTrain"]["acc"], evalRes["evalTrain"]["loss"]]
-        if config.extra:
+        if config.extra or config.actionOnlyTrain or config.alterActionTrain:
             if config.evalTrain:
                 record += [extraEvalRes["evalTrain"]["acc"], extraEvalRes["evalTrain"]["loss"]]
             record += [extraEvalRes["val"]["acc"], extraEvalRes["val"]["loss"]]
@@ -217,10 +217,10 @@ def chooseTrainingData(data):
 
     if config.incluAction:
         if config.actionOnlyTrain:
-            config.logger.debug("Select Extra Training data")
+            config.logger.debug("Select Action Training data only")
             trainingData = data["extra"]["train"]
         elif config.alterActionTrain:
-            config.logger.debug("Select both main and extra training data.")
+            config.logger.debug("Select both main and action training data.")
             trainingData = data["main"]["train"]
             alterData = data["extra"]["train"]
 
@@ -728,13 +728,14 @@ def main():
                     emaSaver.restore(sess, config.weightsFile(epoch))
 
                 # evaluation
-                if config.actionOnlyTrain:
+                if config.actionOnlyTrain or config.alterActionTrain:
                     # only validate on extra data
-                    config.logger.debug("Evaluate on Extra Validation set")
-                    extraEvalRes = runEvaluation(sess, model, data["extra"], epoch,
+                    config.logger.debug("Validation: Main: Action data, Extra: Original data")
+                    evalRes = runEvaluation(sess, model, data["extra"], epoch)
+                    extraEvalRes = runEvaluation(sess, model, data["main"], epoch,
                                                  evalTrain=not config.extraVal)
                 else:
-                    config.logger.debug("Evaluate on both main and extra val")
+                    config.logger.debug("Validation: Main: Original Data, Extra: Loaded Extra Data")
                     evalRes = runEvaluation(sess, model, data["main"], epoch)
                     extraEvalRes = runEvaluation(sess, model, data["extra"], epoch,
                         evalTrain = not config.extraVal)
@@ -800,13 +801,14 @@ def main():
                 else:
                     saver.restore(sess, config.weightsFile(epoch))
 
-            if config.actionOnlyTrain:
-                config.logger.debug("Test on extra testing set")
-                extraEvalRes = runEvaluation(sess, model, data["extra"], epoch,
+            if config.actionOnlyTrain or config.alterActionTrain:
+                config.logger.debug("Testing: Main: Action data, Extra: Original data")
+                evalRes = runEvaluation(sess, model, data["extra"], epoch, evalTest=True)
+                extraEvalRes = runEvaluation(sess, model, data["main"], epoch,
                                              evalTrain=not config.extraVal, evalTest=True)
 
             else:
-                config.logger.debug("Test on main and extra testing set")
+                config.logger.debug("Testing: Main: Original Data, Extra: Loaded Extra Data" )
                 evalRes = runEvaluation(sess, model, data["main"], epoch, evalTest = True)
                 extraEvalRes = runEvaluation(sess, model, data["extra"], epoch,
                                     evalTrain = not config.extraVal, evalTest = True)
