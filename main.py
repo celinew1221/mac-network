@@ -730,7 +730,7 @@ def main():
 
                 # evaluation
                 config.logger.debug("Evaluate on both main and extra val")
-                if args.incluAction:
+                if config.incluAction:
                     evalRes = runEvaluation(sess, model, data["extra"], epoch)
                     extraEvalRes = runEvaluation(sess, model, data["main"], epoch,
                                                  evalTrain=not config.extraVal)
@@ -801,7 +801,7 @@ def main():
                     saver.restore(sess, config.weightsFile(epoch))
 
             config.logger.debug("Test on main and extra testing set")
-            if args.incluAction:
+            if config.incluAction:
                 evalRes = runEvaluation(sess, model, data["extra"], epoch, evalTest=True)
                 extraEvalRes = runEvaluation(sess, model, data["main"], epoch,
                                              evalTrain=not config.extraVal, evalTest=True)
