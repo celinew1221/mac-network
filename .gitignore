@@ -6,3 +6,4 @@ backup
 results/
 run.sh
 weights/
+preds
