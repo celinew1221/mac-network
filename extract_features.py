@@ -49,8 +49,12 @@ def build_model(args):
 
 
 def run_batch(cur_batch, model):
-  mean = np.array([0.485, 0.456, 0.406]).reshape(1, 3, 1, 1)
-  std = np.array([0.229, 0.224, 0.224]).reshape(1, 3, 1, 1)
+  if args.action_sep:
+    mean = np.array([0.485, 0.456, 0.406, 0.485, 0.456, 0.406]).reshape(1, 6, 1, 1)
+    std = np.array([0.229, 0.224, 0.224, 0.485, 0.456, 0.406]).reshape(1, 6, 1, 1)
+  else:
+    mean = np.array([0.485, 0.456, 0.406]).reshape(1, 3, 1, 1)
+    std = np.array([0.229, 0.224, 0.224]).reshape(1, 3, 1, 1)
 
   image_batch = np.concatenate(cur_batch, 0).astype(np.float32)
   image_batch = (image_batch / 255.0 - mean) / std
