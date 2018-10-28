@@ -730,9 +730,14 @@ def main():
 
                 # evaluation
                 config.logger.debug("Evaluate on both main and extra val")
-                evalRes = runEvaluation(sess, model, data["main"], epoch)
-                extraEvalRes = runEvaluation(sess, model, data["extra"], epoch,
-                    evalTrain = not config.extraVal)
+                if args.incluAction:
+                    evalRes = runEvaluation(sess, model, data["extra"], epoch)
+                    extraEvalRes = runEvaluation(sess, model, data["main"], epoch,
+                                                 evalTrain=not config.extraVal)
+                else:
+                    evalRes = runEvaluation(sess, model, data["main"], epoch)
+                    extraEvalRes = runEvaluation(sess, model, data["extra"], epoch,
+                        evalTrain = not config.extraVal)
 
                 # restore standard weights
                 if config.useEMA:
@@ -796,9 +801,14 @@ def main():
                     saver.restore(sess, config.weightsFile(epoch))
 
             config.logger.debug("Test on main and extra testing set")
-            evalRes = runEvaluation(sess, model, data["main"], epoch, evalTest = True)
-            extraEvalRes = runEvaluation(sess, model, data["extra"], epoch,
-                                evalTrain = not config.extraVal, evalTest = True)
+            if args.incluAction:
+                evalRes = runEvaluation(sess, model, data["extra"], epoch, evalTest=True)
+                extraEvalRes = runEvaluation(sess, model, data["main"], epoch,
+                                             evalTrain=not config.extraVal, evalTest=True)
+            else:
+                evalRes = runEvaluation(sess, model, data["main"], epoch, evalTest = True)
+                extraEvalRes = runEvaluation(sess, model, data["extra"], epoch,
+                                    evalTrain = not config.extraVal, evalTest = True)
                         
             print("took {:.2f} seconds".format(time.time() - start))
             printDatasetResults(None, evalRes, extraEvalRes)
