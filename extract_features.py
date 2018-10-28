@@ -132,10 +132,13 @@ def main(args):
         i0 = i1
         print('Processed %d / %d images' % (i1, len(input_paths)))
         cur_batch = []
+        cur_batch2 = []
     if len(cur_batch) > 0:
       feats = run_batch(cur_batch, model)
+      if args.mode == "action_sep":
+        feats2 = run_batch(cur_batch2, model)
       i1 = i0 + len(cur_batch)
-      feat_dset[i0:i1] = feats
+      feat_dset[i0:i1] = np.concatenate((feats, feats2), axis=1)
       print('Processed %d / %d images' % (i1, len(input_paths)))
 
 
