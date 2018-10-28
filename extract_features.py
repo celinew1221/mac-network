@@ -49,12 +49,8 @@ def build_model(args):
 
 
 def run_batch(cur_batch, model):
-  if args.mode == "action_sep":
-    mean = np.array([0.485, 0.456, 0.406, 0.485, 0.456, 0.406]).reshape(1, 6, 1, 1)
-    std = np.array([0.229, 0.224, 0.224, 0.485, 0.456, 0.406]).reshape(1, 6, 1, 1)
-  else:
-    mean = np.array([0.485, 0.456, 0.406]).reshape(1, 3, 1, 1)
-    std = np.array([0.229, 0.224, 0.224]).reshape(1, 3, 1, 1)
+  mean = np.array([0.485, 0.456, 0.406]).reshape(1, 3, 1, 1)
+  std = np.array([0.229, 0.224, 0.224]).reshape(1, 3, 1, 1)
 
   image_batch = np.concatenate(cur_batch, 0).astype(np.float32)
   image_batch = (image_batch / 255.0 - mean) / std
@@ -90,6 +86,7 @@ def main(args):
     feat_dset = None
     i0 = 0
     cur_batch = []
+    cur_batch2 = []
     for i, (path, idx) in enumerate(input_paths):
       if args.mode == "normal":
         img = imread(path, mode='RGB')
@@ -111,22 +108,27 @@ def main(args):
         img1 = imresize(img1, img_size, interp='bicubic')
         img1 = img1.transpose(2, 0, 1)[None]
 
-        # stack them tgt
-        img = np.concatenate((img0, img1), axis=1)
+
       if args.mode != "action_sep":
         img = imresize(img, img_size, interp='bicubic')
         img = img.transpose(2, 0, 1)[None]
+        cur_batch.append(img)
+      else:
+        cur_batch.append(img0)
+        cur_batch2.append(img1)
 
-      cur_batch.append(img)
       if len(cur_batch) == args.batch_size:
         feats = run_batch(cur_batch, model)
+        feats2 = run_batch(cur_batch2, model)
         if feat_dset is None:
           N = len(input_paths)
           _, C, H, W = feats.shape
+          if args.mode == "action_sep":
+            C = C * 2
           feat_dset = f.create_dataset('features', (N, C, H, W),
                                        dtype=np.float32)
         i1 = i0 + len(cur_batch)
-        feat_dset[i0:i1] = feats
+        feat_dset[i0:i1] = np.concatenate((feats, feats2), axis=1)
         i0 = i1
         print('Processed %d / %d images' % (i1, len(input_paths)))
         cur_batch = []
