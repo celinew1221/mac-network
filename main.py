@@ -46,7 +46,7 @@ def logRecord(epoch, epochTime, lr, trainRes, evalRes, extraEvalRes):
         record = [epoch, trainRes["acc"], evalRes["val"]["acc"], trainRes["loss"], evalRes["val"]["loss"]]
         if config.evalTrain:
             record += [evalRes["evalTrain"]["acc"], evalRes["evalTrain"]["loss"]]
-        if config.extra:
+        if config.extra or config.incluAction:
             if config.evalTrain:
                 record += [extraEvalRes["evalTrain"]["acc"], extraEvalRes["evalTrain"]["loss"]]
             record += [extraEvalRes["val"]["acc"], extraEvalRes["val"]["loss"]]
