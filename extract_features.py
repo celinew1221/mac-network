@@ -49,7 +49,7 @@ def build_model(args):
 
 
 def run_batch(cur_batch, model):
-  if args.action_sep:
+  if args.mode == "action_sep":
     mean = np.array([0.485, 0.456, 0.406, 0.485, 0.456, 0.406]).reshape(1, 6, 1, 1)
     std = np.array([0.229, 0.224, 0.224, 0.485, 0.456, 0.406]).reshape(1, 6, 1, 1)
   else:
