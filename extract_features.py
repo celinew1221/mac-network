@@ -98,6 +98,17 @@ def main(args):
         img1 = copy.deepcopy(img0)
         img1[:] = 0
         img = np.concatenate((img0, img1), axis=0)
+      elif args.mode == "action_sep":
+        img0 = imread(path, mode='RGB')
+        img0 = imresize(img0, img_size, interp='bicubic')
+        img0 = img.transpose(2, 0, 1)[None]
+
+        img1 = imread(path.replace("new", "cor"), mode='RGB')
+        img1 = imresize(img1, img_size, interp='bicubic')
+        img1 = img.transpose(2, 0, 1)[None]
+
+        # stack them tgt
+        img = np.concatenate((img0, img1), axis=1)
 
       img = imresize(img, img_size, interp='bicubic')
       img = img.transpose(2, 0, 1)[None]
