@@ -65,7 +65,10 @@ class MACnet(object):
             # images
             # put image known dimension as last dim?
             self.imagesPlaceholder = tf.placeholder(tf.float32, shape = (None, None, None, None))
+            self.secImagesPlaceholder = tf.placeholder(tf.float32, shape = (None, None, None, None))
+
             self.imagesAll = tf.transpose(self.imagesPlaceholder, (0, 2, 3, 1))
+            self.secImagesAll = tf.transpose(self.secImagesPlaceholder, (0, 2, 3, 1))
             # self.imageH = tf.shape(self.imagesAll)[1]
             # self.imageW = tf.shape(self.imagesAll)[2]
 
@@ -109,10 +112,12 @@ class MACnet(object):
 
     # Feeds data into placeholders. See addPlaceholders method for further details.
     def createFeedDict(self, data, images, train):
+        config.logger.debug("Images Stack Size %s, Indiv %s" % (images["images"][:, :3, :, :].shape))
         feedDict = {
             self.questionsIndicesAll: data["questions"],
             self.questionLengthsAll: data["questionLengths"],
-            self.imagesPlaceholder: images["images"],
+            self.imagesPlaceholder: images["images"][:, :3, :, :],
+            self.secImagesPlaceholder: images["images"][:, 3:, :, :],
             self.answersIndicesAll: data["answers"],
             
             self.dropouts["encInput"]: config.encInputDropout if train else 1.0,
@@ -144,6 +149,7 @@ class MACnet(object):
         self.questionsIndices = self.questionsIndicesAll[start:end]
         self.questionLengths = self.questionLengthsAll[start:end]
         self.images = self.imagesAll[start:end]
+        self.secImages = self.secImagesAll[start:end]
         self.answersIndices = self.answersIndicesAll[start:end]
 
         self.batchSize = end - start
@@ -425,7 +431,7 @@ class MACnet(object):
     Returns the final control state and memory state resulted from the network.
     ([batchSize, ctrlDim], [bathSize, memDim])
     '''
-    def MACnetwork(self, images, vecQuestions, questionWords, questionCntxWords, 
+    def MACnetwork(self, images, secImages, vecQuestions, questionWords, questionCntxWords,
         questionLengths, name = "", reuse = None):
 
         with tf.variable_scope("MACnetwork" + name, reuse = reuse):
@@ -436,6 +442,7 @@ class MACnet(object):
                 questionCntxWords = questionCntxWords, 
                 questionLengths = questionLengths,
                 knowledgeBase = images,
+                secKnowledgeBase = secImages,
                 memoryDropout = self.dropouts["memory"],
                 readDropout = self.dropouts["read"],
                 writeDropout = self.dropouts["write"],
@@ -519,6 +526,7 @@ class MACnet(object):
                 features, dim = ops.concat(features, eVecQuestions, config.memDim, mul = config.outQuestionMul)
             
             if config.outImage:
+                # TODO: Make it work with intraActionCell options
                 images, imagesDim = ops.linearizeFeatures(images, self.H, self.W, self.imageInDim, 
                     outputDim = config.outImageDim)
                 images = ops.linear(images, config.memDim, config.outImageDim, name = "outImage")
@@ -789,6 +797,7 @@ class MACnet(object):
 
                         # Image Input Unit (stem)
                         imageFeatures = self.stem(self.images, self.imageInDim, config.memDim)
+                        secImageFeatures = self.stem(self.secImages, self.imageInDim, config.menDim)
 
                         # baseline model
                         if config.useBaseline:
@@ -798,12 +807,14 @@ class MACnet(object):
                         else:      
                             # self.temperature = self.getTemp()
                             
-                            finalControl, finalMemory = self.MACnetwork(imageFeatures, vecQuestions, 
-                                questionWords, questionCntxWords, self.questionLengths)
+                            finalControl, finalMemory = \
+                                self.MACnetwork(imageFeatures, secImagesFeatures, vecQuestions,
+                                                questionWords, questionCntxWords, self.questionLengths)
                             
                             # Output Unit - step 1 (preparing classifier inputs)
+                            # TODO: Image concatination does not work for intraActionCell
                             output, dim = self.outputOp(finalMemory, vecQuestions, 
-                                self.images, self.imageInDim)
+                                                        self.images, self.imageInDim)
 
                         # Output Unit - step 2 (classifier)
                         logits = self.classifier(output, dim, aEmbeddings)
