@@ -732,16 +732,10 @@ def main():
                     emaSaver.restore(sess, config.weightsFile(epoch))
 
                 # evaluation
-                if config.actionOnlyTrain:
-                    # only validate on extra data
-                    config.logger.debug("Evaluate on Extra Validation set")
-                    extraEvalRes = runEvaluation(sess, model, data["extra"], epoch,
-                                                 evalTrain=not config.extraVal)
-                else:
-                    config.logger.debug("Evaluate on both main and extra val")
-                    evalRes = runEvaluation(sess, model, data["main"], epoch)
-                    extraEvalRes = runEvaluation(sess, model, data["extra"], epoch,
-                        evalTrain = not config.extraVal)
+                config.logger.debug("Evaluate on both main and extra val")
+                evalRes = runEvaluation(sess, model, data["main"], epoch)
+                extraEvalRes = runEvaluation(sess, model, data["extra"], epoch,
+                    evalTrain = not config.extraVal)
 
                 # restore standard weights
                 if config.useEMA:
@@ -804,16 +798,10 @@ def main():
                 else:
                     saver.restore(sess, config.weightsFile(epoch))
 
-            if config.actionOnlyTrain:
-                config.logger.debug("Test on extra testing set")
-                extraEvalRes = runEvaluation(sess, model, data["extra"], epoch,
-                                             evalTrain=not config.extraVal, evalTest=True)
-
-            else:
-                config.logger.debug("Test on main and extra testing set")
-                evalRes = runEvaluation(sess, model, data["main"], epoch, evalTest = True)
-                extraEvalRes = runEvaluation(sess, model, data["extra"], epoch,
-                                    evalTrain = not config.extraVal, evalTest = True)
+            config.logger.debug("Test on main and extra testing set")
+            evalRes = runEvaluation(sess, model, data["main"], epoch, evalTest = True)
+            extraEvalRes = runEvaluation(sess, model, data["extra"], epoch,
+                                evalTrain = not config.extraVal, evalTest = True)
                         
             print("took {:.2f} seconds".format(time.time() - start))
             printDatasetResults(None, evalRes, extraEvalRes)
