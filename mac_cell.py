@@ -57,7 +57,7 @@ class MACCell(tf.nn.rnn_cell.RNNCell):
         knowledgeBase: 
     '''
     def __init__(self, vecQuestions, questionWords, questionCntxWords, questionLengths, 
-            knowledgeBase, memoryDropout, readDropout, writeDropout, 
+            knowledgeBase, secKnowledgeBase, memoryDropout, readDropout, writeDropout,
             batchSize, train, reuse = None):
         
         self.vecQuestions = vecQuestions
@@ -66,6 +66,7 @@ class MACCell(tf.nn.rnn_cell.RNNCell):
         self.questionLengths = questionLengths
 
         self.knowledgeBase = knowledgeBase
+        self.secKnowledgeBase = secKnowledgeBase
 
         self.dropouts = {}
         self.dropouts["memory"] = memoryDropout 
@@ -206,7 +207,7 @@ class MACCell(tf.nn.rnn_cell.RNNCell):
     Returns the information extracted.
     [batchSize, memDim]
     '''
-    def read(self, knowledgeBase, memory, control, name = "", reuse = None):
+    def read(self, knowledgeBase, memory, control, name = "", reuse = None, cell_id=0):
         with tf.variable_scope("read" + name, reuse = reuse):
             dim = config.memDim 
 
@@ -265,7 +266,10 @@ class MACCell(tf.nn.rnn_cell.RNNCell):
             # transform vectors to attention distribution
             attention = ops.inter2att(interactions, dim, dropout = self.dropouts["read"])
 
-            self.attentions["kb"].append(attention)
+            if cell_id == 0:
+                self.attentions["kb"].append(attention)
+            elif cell_id == 1:
+                self.attentions["kb2"].append(attention)
 
             # optionally use projected knowledge base instead of original
             if config.readSmryKBProj:
@@ -374,6 +378,93 @@ class MACCell(tf.nn.rnn_cell.RNNCell):
 
         return newMemory
 
+    def write_action(self, memory, info, info2, control, contControl=None, name="", reuse=None):
+        with tf.variable_scope("write" + name, reuse=reuse):
+
+            # # optionally project info
+            # if config.writeInfoProj:
+            #     info = ops.linear(info, config.memDim, config.memDim, name="info")
+
+            # optional info nonlinearity
+            info = ops.activations[config.writeInfoAct](info)
+            info2 = ops.activations[config.writeInfoAct](info2)
+
+            # TODO: Make it work with self attention
+            # compute self-attention vector based on previous controls and memories
+            # if config.writeSelfAtt:
+            #     selfControl = control
+            #     if config.writeSelfAttMod == "CONT":
+            #         selfControl = contControl
+            #     # elif config.writeSelfAttMod == "POST":
+            #     #     selfControl = postControl
+            #     selfControl = ops.linear(selfControl, config.ctrlDim, config.ctrlDim, name="ctrlProj")
+            #
+            #     interactions = self.controls * tf.expand_dims(selfControl, axis=1)
+            #
+            #     # if config.selfAttShareInter:
+            #     #     selfAttlogits = self.linearP(selfAttInter, config.encDim, 1, self.interL[0], self.interL[1], name = "modSelfAttInter")
+            #     attention = ops.inter2att(interactions, config.ctrlDim, name="selfAttention")
+            #     self.attentions["self"].append(attention)
+            #     selfSmry = ops.att2Smry(attention, self.memories)
+
+            # get write unit inputs: previous memory, the new info, optionally self-attention / control
+            newMem1, dim = memory, config.memDim
+            newMem2, dim = memory, config.memDim
+
+            # wrap current info with associated mem
+            if config.writeInputs == "INFO":
+                newMem1 = info
+                newMem2 = info2
+
+            elif config.writeInputs == "SUM":
+                newMem1 += info
+                newMem2 += info2
+
+            elif config.writeInputs == "BOTH":
+                newMem1, dim = ops.concat(newMem1, info, dim, mul=config.writeConcatMul)
+                newMem2, dim = ops.concat(newMem2, info2, dim, mul=config.writeConcatMul)
+            # else: MEM
+
+            # if config.writeSelfAtt:
+            #     newMemory = tf.concat([newMemory, selfSmry], axis=-1)
+            #     dim += config.memDim
+            #
+            # if config.writeMergeCtrl:
+            #     newMemory = tf.concat([newMemory, control], axis=-1)
+            #     dim += config.memDim
+
+            # project memory back to memory dimension
+            if config.writeMemProj or (dim != config.memDim):
+                newMem1 = ops.linear(newMem1, dim, config.memDim, name="newMemory")
+                newMem2 = ops.linear(newMem2, dim, config.memDim, name="newMemory")
+
+            # wrap the two memory
+            # linear combination
+            newMemory, dim = ops.concat(newMem1, newMem2, dim, mul=config.writeConcatMul)
+            newMemory = ops.linear(newMemory, dim, config.memDim, name="newMemory")
+
+            # optional memory nonlinearity
+            newMemory = ops.activations[config.writeMemAct](newMemory)
+            # write unit gate
+            # if config.writeGate:
+            #     gateDim = config.memDim
+            #     if config.writeGateShared:
+            #         gateDim = 1
+            #
+            #     z = tf.sigmoid(ops.linear(control, config.ctrlDim, gateDim, name="gate", bias=config.writeGateBias))
+            #
+            #     self.attentions["gate"].append(z)
+            #
+            #     newMemory = newMemory * z + memory * (1 - z)
+            #
+            #     # optional batch normalization
+            # if config.memoryBN:
+            #     newMemory = tf.contrib.layers.batch_norm(newMemory, decay=config.bnDecay,
+            #                                              center=config.bnCenter, scale=config.bnScale,
+            #                                              is_training=self.train, updates_collections=None)
+
+        return newMemory
+
     def memAutoEnc(newMemory, info, control, name = "", reuse = None):
         with tf.variable_scope("memAutoEnc" + name, reuse = reuse):
             # inputs to auto encoder
@@ -458,11 +549,21 @@ class MACCell(tf.nn.rnn_cell.RNNCell):
 
             info = self.read(self.knowledgeBase, memory, newControl, name = cellName, reuse = cellReuse) 
 
-            if config.writeDropout < 1.0:
-                # write unit
-                info = tf.nn.dropout(info, self.dropouts["write"])
-            
-            newMemory = self.write(memory, info, newControl, self.contControl, name = cellName, reuse = cellReuse)
+            if config.actionOnlyTrain or config.alterActionTrain:
+                info2 = self.read(self.secKnowledgeBase, memory, newControl, name=cellName, reuse=cellReuse)
+                if config.writeDropout < 1.0:
+                    # write unit
+                    info = tf.nn.dropout(info, self.dropouts["write"])
+
+                newMemory = self.write_action(memory, info, info2, newControl, self.contControl, name=cellName,
+                                              reuse=cellReuse)
+
+            else:
+                if config.writeDropout < 1.0:
+                    # write unit
+                    info = tf.nn.dropout(info, self.dropouts["write"])
+
+                newMemory = self.write(memory, info, newControl, self.contControl, name = cellName, reuse = cellReuse)
 
             # add auto encoder loss for memory
             # if config.autoEncMem:
@@ -538,7 +639,7 @@ class MACCell(tf.nn.rnn_cell.RNNCell):
     '''
     def zero_state(self, batchSize, dtype = tf.float32):
         ## initialize data-structures
-        self.attentions = {"kb": [], "question": [], "self": [], "gate": []}
+        self.attentions = {"kb": [], "kb2": [], "question": [], "self": [], "gate": []}
         self.autoEncLosses = {"control": tf.constant(0.0), "memory": tf.constant(0.0)}
 
 
