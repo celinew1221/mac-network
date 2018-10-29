@@ -130,7 +130,6 @@ def showImgAtt(img, instance, step, ax):
 def showImgAtts(instance):
     img = imread(inImgName(instance["imageId"], "new"))
     img1 = imread(inImgName(instance["imageId"], "cor"))
-
     length = len(instance["attentions"]["kb"])
     
     # show images
