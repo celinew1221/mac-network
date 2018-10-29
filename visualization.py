@@ -47,15 +47,15 @@ dataFile = "./preds/{expName}/{tier}Predictions-{expName}.json".format(
     tier = args.tier, 
     expName = args.expName)
 
-inImgName = lambda index: "{dir}/CLEVR_{tier}_{index}.png".format(
+inImgName = lambda index, tier: "{dir}/CLEVR_{tier}_{index}.png".format(
     dir = imagesDir, 
     index = ("000000%d" % index)[-6:],
-    tier = args.tier)
+    tier = tier)
 
-outImgAttName = lambda instance, j: "./preds/{expName}/{tier}{id}Img_{step}.png".format(
+outImgAttName = lambda instance, j, tier: "./preds/{expName}/{tier}{id}Img_{step}.png".format(
     expName = args.expName, 
     tier = args.tier, 
-    id = instance["index"], 
+    id = tier+str(instance["index"]),
     step = j + 1)
 
 outTableAttName = lambda instance, name: "./preds/{expName}/{tier}{id}{tableName}_{right}{orientation}.png".format(
@@ -128,7 +128,8 @@ def showImgAtt(img, instance, step, ax):
 
 
 def showImgAtts(instance):
-    img = imread(inImgName(instance["imageId"]))
+    img = imread(inImgName(instance["imageId"], "new"))
+    img1 = imread(inImgName(instance["imageId"], "cor"))
 
     length = len(instance["attentions"]["kb"])
     
@@ -136,12 +137,17 @@ def showImgAtts(instance):
     for j in range(length):
         fig, ax = plt.subplots()
         fig.set_figheight(figureImageDims[0])
-        fig.set_figwidth(figureImageDims[1])              
-        
+        fig.set_figwidth(figureImageDims[1])
         showImgAtt(img, instance, j, ax)
-        
         plt.subplots_adjust(bottom = 0, top = 1, left = 0, right = 1)
-        savePlot(fig, outImgAttName(instance, j))
+        savePlot(fig, outImgAttName(instance, j, "new"))
+
+        fig, ax = plt.subplots()
+        fig.set_figheight(figureImageDims[0])
+        fig.set_figwidth(figureImageDims[1])
+        showImgAtt(img1, instance, j, ax)
+        plt.subplots_adjust(bottom=0, top=1, left=0, right=1)
+        savePlot(fig, outImgAttName(instance, j, "cor"))
 
 def showTableAtt(instance, table, x, y, name):
     # if args.trans:
