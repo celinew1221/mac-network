@@ -47,10 +47,10 @@ dataFile = "./preds/{expName}/{tier}Predictions-{expName}.json".format(
     tier = args.tier, 
     expName = args.expName)
 
-inImgName = lambda index: "{dir}/CLEVR_{tier}_{index}.png".format(
+inImgName = lambda index, tier: "{dir}/CLEVR_{tier}_{index}.png".format(
     dir = imagesDir, 
     index = ("000000%d" % index)[-6:],
-    tier = args.tier)
+    tier = tier)
 
 outImgAttName = lambda instance, j: "./preds/{expName}/{tier}{id}Img_{step}.png".format(
     expName = args.expName, 
@@ -128,7 +128,10 @@ def showImgAtt(img, instance, step, ax):
 
 
 def showImgAtts(instance):
-    img = imread(inImgName(instance["imageId"]))
+    img = imread(inImgName(instance["imageId"], "new"))
+    img1 = imread(inImgName(instance["imageId"], "cor"))
+    img2 = np.concatenate((img, img1), axis=0)
+    # img2 = imresize([], img_size, interp='bicubic')
 
     length = len(instance["attentions"]["kb"])
     
@@ -138,7 +141,7 @@ def showImgAtts(instance):
         fig.set_figheight(figureImageDims[0])
         fig.set_figwidth(figureImageDims[1])              
         
-        showImgAtt(img, instance, j, ax)
+        showImgAtt(img2, instance, j, ax)
         
         plt.subplots_adjust(bottom = 0, top = 1, left = 0, right = 1)
         savePlot(fig, outImgAttName(instance, j))
